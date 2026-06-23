@@ -1,11 +1,11 @@
-const { DatabaseSync } = require('node:sqlite');
+const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
 const dbDir = path.join(__dirname, '../../data');
 if (!fs.existsSync(dbDir)) fs.mkdirSync(dbDir, { recursive: true });
 
-const db = new DatabaseSync(process.env.DATABASE_PATH || path.join(dbDir, 'chatbot.db'));
+const db = new Database(process.env.DATABASE_PATH || path.join(dbDir, 'chatbot.db'));
 
 db.exec('PRAGMA journal_mode = WAL');
 db.exec('PRAGMA foreign_keys = ON');
