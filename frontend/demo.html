@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>East Coast Parking – Chat Widget Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; background: #f0f4f8; color: #2c3e50; }
+
+    nav { background: #1a5276; color: white; padding: 14px 32px; display: flex; justify-content: space-between; align-items: center; }
+    nav .logo { font-size: 20px; font-weight: 700; }
+    nav .nav-links a { color: rgba(255,255,255,.8); text-decoration: none; margin-left: 20px; font-size: 14px; }
+    nav .nav-links a:hover { color: white; }
+
+    .hero { background: linear-gradient(135deg, #1a5276 0%, #2e86c1 100%); color: white; padding: 70px 32px; text-align: center; }
+    .hero h1 { font-size: 42px; margin-bottom: 14px; }
+    .hero p { font-size: 18px; opacity: .85; max-width: 560px; margin: 0 auto 28px; }
+    .hero .btn { display: inline-block; background: white; color: #1a5276; padding: 14px 32px; border-radius: 30px; font-weight: 700; font-size: 16px; text-decoration: none; transition: transform .15s; }
+    .hero .btn:hover { transform: scale(1.05); }
+
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; padding: 50px 32px; max-width: 1100px; margin: 0 auto; }
+    .feature-card { background: white; border-radius: 12px; padding: 24px; text-align: center; box-shadow: 0 2px 12px rgba(0,0,0,.07); }
+    .feature-card .icon { font-size: 36px; margin-bottom: 12px; }
+    .feature-card h3 { font-size: 15px; font-weight: 700; color: #1a5276; margin-bottom: 6px; }
+    .feature-card p { font-size: 13px; color: #666; line-height: 1.5; }
+
+    .pricing { background: white; padding: 50px 32px; text-align: center; }
+    .pricing h2 { font-size: 28px; color: #1a5276; margin-bottom: 30px; }
+    .pricing-grid { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; }
+    .pricing-card { border: 2px solid #dde4eb; border-radius: 14px; padding: 28px 36px; min-width: 220px; }
+    .pricing-card.featured { border-color: #1a5276; background: #eaf2fb; }
+    .pricing-card .price { font-size: 36px; font-weight: 800; color: #1a5276; }
+    .pricing-card .price sup { font-size: 18px; }
+    .pricing-card .price span { font-size: 14px; font-weight: 400; color: #888; }
+    .pricing-card h3 { margin-bottom: 8px; font-size: 16px; }
+    .pricing-card p { font-size: 13px; color: #666; margin-top: 8px; }
+
+    footer { background: #1a5276; color: rgba(255,255,255,.7); text-align: center; padding: 20px; font-size: 13px; }
+    footer a { color: rgba(255,255,255,.9); }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">🅿️ East Coast Parking</div>
+  <div class="nav-links">
+    <a href="#">Home</a>
+    <a href="#">Book Now</a>
+    <a href="#">Services</a>
+    <a href="#">Contact</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Brisbane Cruise Terminal Parking</h1>
+  <p>Secure, affordable parking just 1.5km from BICT. Free shuttle runs constantly — 15-minute transfer.</p>
+  <a href="#" class="btn">Book from $9.90/day →</a>
+</div>
+
+<div class="features">
+  <div class="feature-card">
+    <div class="icon">🚌</div>
+    <h3>Free Shuttle Service</h3>
+    <p>Runs constantly. 15-minute transfer to Brisbane International Cruise Terminal.</p>
+  </div>
+  <div class="feature-card">
+    <div class="icon">📷</div>
+    <h3>24/7 CCTV Security</h3>
+    <p>On-site security and CCTV monitoring around the clock for your peace of mind.</p>
+  </div>
+  <div class="feature-card">
+    <div class="icon">🅿️</div>
+    <h3>Open Air & Undercover</h3>
+    <p>Choose between budget-friendly open air or premium undercover parking with valet.</p>
+  </div>
+  <div class="feature-card">
+    <div class="icon">🚗</div>
+    <h3>Car Wash & Detailing</h3>
+    <p>Optional hand wash and detail service while you're at sea. Call for pricing.</p>
+  </div>
+</div>
+
+<div class="pricing">
+  <h2>Simple, Transparent Pricing</h2>
+  <div class="pricing-grid">
+    <div class="pricing-card featured">
+      <h3>Open Air Parking</h3>
+      <div class="price"><sup>$</sup>9.90 <span>/day</span></div>
+      <p>Currently on special. No booking fee.</p>
+    </div>
+    <div class="pricing-card">
+      <h3>Undercover Parking</h3>
+      <div class="price"><sup>$</sup>135</div>
+      <p>Includes valet service & luggage assistance.</p>
+    </div>
+    <div class="pricing-card">
+      <h3>Large Vehicles</h3>
+      <div class="price" style="font-size:22px;padding-top:8px;">Custom Quote</div>
+      <p>Call us on 0404 094 064 for pricing.</p>
+    </div>
+  </div>
+</div>
+
+<footer>
+  99 Main Beach Rd, Pinkenba QLD 4008 &nbsp;|&nbsp;
+  <a href="tel:0404094064">0404 094 064</a> &nbsp;|&nbsp;
+  <a href="mailto:bookings@eastcoastparking.com.au">bookings@eastcoastparking.com.au</a>
+</footer>
+
+<!-- ─── Chat Widget ─────────────────────────────────────────────────────── -->
+<script src="./widget.js"></script>
+<script src="./init.js"></script>
+
+</body>
+</html>

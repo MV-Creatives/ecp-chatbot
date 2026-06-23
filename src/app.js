@@ -47,7 +47,7 @@ app.use('/api/cruise-schedule', cruiseRoutes);
 app.use('/api/escalate-to-agent', widgetAuth, escalateRoutes);
 
 // Serve frontend files (widget.js + demo page)
-app.use(express.static(require('path').join(__dirname, '../../frontend')));
+app.use(express.static(require('path').join(__dirname, '../frontend')));
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
