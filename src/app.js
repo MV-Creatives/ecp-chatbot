@@ -41,7 +41,7 @@ app.use('/api/', limiter);
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 app.get('/debug', async (req, res) => {
-  const result = { env: {} };
+  const result = { env: {}, allKeys: Object.keys(process.env).sort() };
   result.env.ANTHROPIC_API_KEY = (process.env.ANTHROPIC_API_KEY || '').substring(0, 15) + '...';
   result.env.WIDGET_API_KEY = process.env.WIDGET_API_KEY || 'NOT SET';
   result.env.NODE_ENV = process.env.NODE_ENV || 'NOT SET';
