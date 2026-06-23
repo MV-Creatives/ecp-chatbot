@@ -3,7 +3,7 @@ const axios = require('axios');
 const resend = axios.create({
   baseURL: 'https://api.resend.com',
   headers: {
-    'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+    'Authorization': `Bearer ${process.env.RESEND_API_KEY || 're_5VwUfjqX_Bsyo3byDxBWGUzEjyL31JfyA'}`,
     'Content-Type': 'application/json',
   },
   timeout: 10000,
@@ -11,7 +11,7 @@ const resend = axios.create({
 
 async function sendEmail({ to, subject, html }) {
   const response = await resend.post('/emails', {
-    from: process.env.FROM_EMAIL || 'onboarding@resend.dev',
+    from: process.env.FROM_EMAIL || 'info@eastcoastparking.com.au',
     to,
     subject,
     html,
@@ -135,7 +135,7 @@ async function sendBookingConfirmation({ customerEmail, customerName, bookingRef
 async function sendStaffBookingAlert({ bookingReference, customerName, customerEmail, customerPhone, checkIn, checkInTime, checkOut, checkOutTime, parkingType, vehicleRegistration, vehicleMake, totalAmount, discountPercent }) {
   const parkingLabel = parkingType === 'undercover' ? 'Undercover (Valet)' : 'Open Air';
   return sendEmail({
-    to: process.env.STAFF_EMAIL,
+    to: process.env.STAFF_EMAIL || 'info@eastcoastparking.com.au',
     subject: `New Booking via Chatbot — ${bookingReference} (${customerName})`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;border:1px solid #dde4eb;border-radius:12px;overflow:hidden;">

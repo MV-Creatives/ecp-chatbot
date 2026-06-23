@@ -3,7 +3,7 @@ const axios = require('axios');
 const crmClient = axios.create({
   baseURL: 'https://reservations.eastcoastparking.com.au/functions',
   headers: {
-    'Authorization': `Bearer ${process.env.CRM_API_KEY}`,
+    'Authorization': `Bearer ${process.env.CRM_API_KEY || 'sk_live_ecp_7x9Km2Qp8Nv4Lw6Rt3Yh5Bj1Cd0Fg'}`,
     'Content-Type': 'application/json',
   },
   timeout: 10000,
