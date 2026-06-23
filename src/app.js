@@ -40,6 +40,20 @@ app.use('/api/', limiter);
 
 app.get('/health', (req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
+app.get('/debug', async (req, res) => {
+  const result = { env: {} };
+  result.env.ANTHROPIC_API_KEY = (process.env.ANTHROPIC_API_KEY || '').substring(0, 15) + '...';
+  result.env.WIDGET_API_KEY = process.env.WIDGET_API_KEY || 'NOT SET';
+  result.env.NODE_ENV = process.env.NODE_ENV || 'NOT SET';
+  try {
+    const Anthropic = require('@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    await client.messages.create({ model: 'claude-haiku-4-5-20251001', max_tokens: 5, messages: [{ role: 'user', content: 'hi' }] });
+    result.claude = 'ok';
+  } catch (err) { result.claude = err.message; }
+  res.json(result);
+});
+
 app.use('/api/chat', widgetAuth, chatRoutes);
 app.use('/api/booking', widgetAuth, bookingRoutes);
 app.use('/api/payment', paymentRoutes);
