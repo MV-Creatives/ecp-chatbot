@@ -2,8 +2,14 @@
   'use strict';
 
   // ─── Config ────────────────────────────────────────────────────────────────
+  var _scriptSrc = (document.currentScript || (function() {
+    var scripts = document.getElementsByTagName('script');
+    return scripts[scripts.length - 1];
+  })()).src;
+  var _apiBase = _scriptSrc ? _scriptSrc.replace(/\/widget\.js.*$/, '') : 'http://localhost:3001';
+
   var ECP_CONFIG = {
-    apiBase: 'http://localhost:3001',
+    apiBase: _apiBase,
     apiKey: '',
     primaryColor: '#ff751f',
     accentColor: '#e5621a',
