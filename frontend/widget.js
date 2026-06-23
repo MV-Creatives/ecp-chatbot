@@ -86,7 +86,17 @@
       '#ecp-agent-btn:hover{color:' + ECP_CONFIG.primaryColor + ';text-decoration-color:' + ECP_CONFIG.primaryColor + ';}',
       '@keyframes ecpFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}',
       '@keyframes ecpBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}',
-      '@media(max-width:420px){#ecp-widget-container{width:calc(100vw - 20px);right:10px;bottom:80px;}}',
+      '@media(max-width:480px){' +
+        '#ecp-widget-container{width:calc(100vw - 16px);right:8px;left:8px;bottom:76px;max-height:82vh;border-radius:12px;}' +
+        '#ecp-messages{min-height:180px;max-height:calc(82vh - 200px);}' +
+        '#ecp-widget-launcher{bottom:16px;right:16px;width:56px;height:56px;}' +
+        '#ecp-greeting-bubble{display:none;}' +
+        '#ecp-input{font-size:16px;}' +
+        '.ecp-qr-btn{font-size:13px;padding:8px 14px;}' +
+        '.ecp-bubble{font-size:14px;}' +
+        '#ecp-widget-header{padding:12px 14px;}' +
+        '.ecp-header-text h3{font-size:15px;}' +
+      '}',
     ].join('');
 
     var style = document.createElement('style');
