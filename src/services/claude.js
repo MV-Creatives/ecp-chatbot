@@ -1,7 +1,6 @@
 const Anthropic = require('@anthropic-ai/sdk');
 
-const _k = Buffer.from('c2stYW50LWFwaTAzLVNvbG5JcVd2MHJmZENDX3lPNHQybUpPLUNkOFZkTHpMS3lrYUp5eXl4cktDbjd3N1VzLVFjSnd3X3lyQlVJd0diWnFsVFY3ckFjVE16Vjh1d0tmY0l3LUJEMHBCZ0FB', 'base64').toString();
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY || _k });
+const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 function buildSystemPrompt() {
   const now = new Date();

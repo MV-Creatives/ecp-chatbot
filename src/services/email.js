@@ -3,7 +3,7 @@ const axios = require('axios');
 const resend = axios.create({
   baseURL: 'https://api.resend.com',
   headers: {
-    'Authorization': `Bearer ${process.env.RESEND_API_KEY || 're_5VwUfjqX_Bsyo3byDxBWGUzEjyL31JfyA'}`,
+    'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
     'Content-Type': 'application/json',
   },
   timeout: 10000,
