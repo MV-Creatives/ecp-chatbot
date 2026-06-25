@@ -87,15 +87,20 @@
       '@keyframes ecpFadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}',
       '@keyframes ecpBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-6px)}}',
       '@media(max-width:480px){' +
-        '#ecp-widget-container{width:calc(100vw - 16px);right:8px;left:8px;bottom:76px;max-height:82vh;border-radius:12px;}' +
-        '#ecp-messages{min-height:180px;max-height:calc(82vh - 200px);}' +
-        '#ecp-widget-launcher{bottom:16px;right:16px;width:56px;height:56px;}' +
-        '#ecp-greeting-bubble{display:none;}' +
-        '#ecp-input{font-size:16px;}' +
-        '.ecp-qr-btn{font-size:13px;padding:8px 14px;}' +
-        '.ecp-bubble{font-size:14px;}' +
-        '#ecp-widget-header{padding:12px 14px;}' +
-        '.ecp-header-text h3{font-size:15px;}' +
+        '#ecp-widget-container{width:100% !important;right:0 !important;left:0 !important;bottom:0 !important;top:auto !important;max-height:88svh;max-height:88vh;border-radius:18px 18px 0 0 !important;padding-bottom:env(safe-area-inset-bottom,0px);transform-origin:bottom center;}' +
+        '#ecp-widget-container.ecp-hidden{transform:translateY(100%) !important;}' +
+        '#ecp-messages{min-height:200px;max-height:calc(88svh - 185px);max-height:calc(88vh - 185px);-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}' +
+        '#ecp-widget-launcher{bottom:calc(20px + env(safe-area-inset-bottom,0px));right:16px;width:56px;height:56px;}' +
+        '#ecp-greeting-bubble{display:none !important;}' +
+        '#ecp-input{font-size:16px !important;}' +
+        'html body .ecp-qr-btn{font-size:13px !important;padding:8px 14px !important;}' +
+        '.ecp-bubble{font-size:14px !important;line-height:1.55 !important;}' +
+        '#ecp-widget-header{padding:14px 16px !important;cursor:default !important;border-radius:18px 18px 0 0 !important;}' +
+        '.ecp-header-text h3{font-size:15px !important;}' +
+        '#ecp-send-btn{width:44px !important;height:44px !important;}' +
+        '#ecp-agent-btn{font-size:12.5px !important;padding:4px 0 !important;}' +
+        '.ecp-msg-avatar{display:none !important;}' +
+        '.ecp-bubble{max-width:92% !important;}' +
       '}',
     ].join('');
 
@@ -537,7 +542,7 @@
     document.getElementById('ecp-agent-btn').addEventListener('click', escalateToAgent);
 
     initInput();
-    initDrag(els.container);
+    if (window.innerWidth > 480) initDrag(els.container);
 
     // Greeting bubble — show immediately, auto-hide after 8s
     var g = document.getElementById('ecp-greeting-bubble');
