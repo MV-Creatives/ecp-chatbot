@@ -160,6 +160,9 @@
           '</div>',
         '</div>',
         '<div class="ecp-header-actions">',
+          '<button class="ecp-header-btn" id="ecp-clear-btn" title="Clear chat" aria-label="Clear chat history">',
+            '<svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>',
+          '</button>',
           '<button class="ecp-header-btn" id="ecp-minimize-btn" title="Minimise" aria-label="Minimise chat">',
             '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13H5v-2h14v2z"/></svg>',
           '</button>',
@@ -578,6 +581,21 @@
 
     document.getElementById('ecp-minimize-btn').addEventListener('click', function () {
       closeWidget(els.container);
+    });
+
+    document.getElementById('ecp-clear-btn').addEventListener('click', function () {
+      // Clear local message log and session
+      if (state.sessionId) {
+        try { localStorage.removeItem(msgKey()); } catch(e) {}
+      }
+      state.sessionId = null;
+      state.messages = [];
+      sessionStorage.removeItem('ecp_session_id');
+      // Clear the messages area and show fresh welcome
+      var msgs = document.getElementById('ecp-messages');
+      msgs.innerHTML = '';
+      document.getElementById('ecp-quick-replies').innerHTML = '';
+      showWelcome();
     });
 
     document.getElementById('ecp-send-btn').addEventListener('click', function () {
