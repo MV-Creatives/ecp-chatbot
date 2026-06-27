@@ -280,6 +280,11 @@
         '💳 Pay Now & Confirm Booking',
       '</a>',
       '<p style="margin:8px 0 0;font-size:11px;color:#999;text-align:center;">Secure payment via Stripe</p>',
+      '<button id="ecp-paid-btn" data-ref="' + (booking.booking_reference || '') + '" ',
+        'style="width:100%;margin-top:10px;background:white;color:#27ae60;border:1.5px solid #27ae60;',
+        'padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">',
+        '✅ I\'ve completed my payment',
+      '</button>',
     ].join('');
     bubble.innerHTML = [
       '<p style="margin:0 0 10px;font-size:12px;color:#888;">',
@@ -437,6 +442,36 @@
     }
   }
 
+  async function confirmPayment(bookingReference, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Confirming…';
+
+    try {
+      var res = await fetch(ECP_CONFIG.apiBase + '/api/payment/verify', {
+        method: 'POST',
+        headers: apiHeaders(),
+        body: JSON.stringify({ bookingReference: bookingReference }),
+      });
+      var data = await res.json();
+
+      if (res.ok && data.success) {
+        btn.style.background = '#27ae60';
+        btn.style.color = 'white';
+        btn.style.border = 'none';
+        btn.textContent = '✅ Payment confirmed!';
+        renderMessage('bot', 'Your payment is confirmed and your booking is locked in. A confirmation email is on its way. See you soon!');
+      } else {
+        btn.disabled = false;
+        btn.textContent = '✅ I\'ve completed my payment';
+        renderMessage('bot', 'We couldn\'t verify your payment yet — it may still be processing. Please wait a minute and try again, or call us on 0404 094 064.');
+      }
+    } catch (err) {
+      btn.disabled = false;
+      btn.textContent = '✅ I\'ve completed my payment';
+      renderMessage('bot', 'Something went wrong. Please call us on 0404 094 064 and we\'ll confirm your booking manually.');
+    }
+  }
+
   async function escalateToAgent() {
     showContactForm();
     setQuickReplies([]);
@@ -543,6 +578,23 @@
 
     initInput();
     if (window.innerWidth > 480) initDrag(els.container);
+
+    // Handle "I've completed my payment" button via delegation
+    document.getElementById('ecp-messages').addEventListener('click', function(e) {
+      var btn = e.target.closest('#ecp-paid-btn');
+      if (!btn) return;
+      confirmPayment(btn.getAttribute('data-ref'), btn);
+    });
+
+    // bfcache: reset spinner if user navigates away and returns
+    window.addEventListener('pageshow', function(event) {
+      if (event.persisted) {
+        state.loading = false;
+        hideTyping();
+        var sendBtn = document.getElementById('ecp-send-btn');
+        if (sendBtn) sendBtn.disabled = false;
+      }
+    });
 
     // Greeting bubble — show immediately, auto-hide after 8s
     var g = document.getElementById('ecp-greeting-bubble');

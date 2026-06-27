@@ -4,12 +4,30 @@ const { verifyPayment, getStripePublishableKey } = require('../services/crm');
 const { sendBookingConfirmation } = require('../services/email');
 const { db } = require('../services/database');
 
-// Called after Stripe redirects back to success URL with ?session_id=cs_...
+// Called after user completes Stripe payment — accepts either a Stripe session ID directly,
+// or a booking reference (we look up the payment_url and extract the session ID from it).
 router.post('/verify', async (req, res) => {
-  const { sessionId: stripeSessionId, bookingId } = req.body;
+  let { sessionId: stripeSessionId, bookingId, bookingReference } = req.body;
+
+  if (!stripeSessionId && bookingReference) {
+    const row = db.prepare(
+      `SELECT id, payment_url FROM bookings WHERE crm_booking_id = ? LIMIT 1`
+    ).get(bookingReference);
+
+    if (!row || !row.payment_url) {
+      return res.status(404).json({ error: 'Booking not found or payment URL missing' });
+    }
+
+    bookingId = bookingId || row.id;
+    const match = row.payment_url.match(/\/(cs_(?:live|test)_[^#?/]+)/);
+    if (!match) {
+      return res.status(400).json({ error: 'Could not extract Stripe session from payment URL' });
+    }
+    stripeSessionId = match[1];
+  }
 
   if (!stripeSessionId) {
-    return res.status(400).json({ error: 'Stripe session_id is required' });
+    return res.status(400).json({ error: 'stripeSessionId or bookingReference is required' });
   }
 
   try {

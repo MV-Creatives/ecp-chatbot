@@ -103,13 +103,13 @@ router.post('/', async (req, res) => {
         try {
           db.prepare(`
             INSERT INTO bookings (id, session_id, crm_booking_id, parking_type, check_in, check_out,
-              customer_name, customer_email, customer_phone, amount, status, payment_status, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)
+              customer_name, customer_email, customer_phone, amount, status, payment_status, payment_url, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?, ?)
           `).run(
             uuidv4(), sid, toolResult.booking_reference, result.input.parkingType,
             result.input.checkIn, result.input.checkOut,
             result.input.customerName, result.input.customerEmail, result.input.customerPhone,
-            toolResult.total_amount, new Date().toISOString(), new Date().toISOString()
+            toolResult.total_amount, toolResult.payment_url || null, new Date().toISOString(), new Date().toISOString()
           );
         } catch (dbErr) {
           console.error('DB save failed (booking still created):', dbErr.message);

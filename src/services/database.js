@@ -40,6 +40,7 @@ db.exec(`
     status TEXT DEFAULT 'pending',
     payment_status TEXT DEFAULT 'unpaid',
     payment_intent_id TEXT,
+    payment_url TEXT,
     created_at TEXT NOT NULL,
     updated_at TEXT NOT NULL
   );
@@ -57,6 +58,9 @@ db.exec(`
     created_at TEXT NOT NULL
   );
 `);
+
+// Migrate existing DBs that predate the payment_url column
+try { db.exec('ALTER TABLE bookings ADD COLUMN payment_url TEXT'); } catch(e) {}
 
 console.log('Database ready');
 
