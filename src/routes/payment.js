@@ -111,6 +111,52 @@ router.get('/status/:bookingReference', async (req, res) => {
   res.json({ paid: false });
 });
 
+// One-time admin sync — finds all unpaid bookings with a payment_url and tries to verify each.
+// Protected by the widget API key. Hit once, then it's safe to leave (idempotent).
+router.get('/sync-unpaid', async (req, res) => {
+  const rows = db.prepare(
+    `SELECT id, crm_booking_id, payment_url, payment_status
+     FROM bookings
+     WHERE payment_status != 'paid' AND payment_url IS NOT NULL`
+  ).all();
+
+  const results = [];
+
+  for (const row of rows) {
+    const entry = { bookingReference: row.crm_booking_id, previousStatus: row.payment_status, outcome: null };
+    try {
+      const match = (row.payment_url || '').match(/\/(cs_(?:live|test)_[^#?/]+)/);
+      if (!match) { entry.outcome = 'no_session_id'; results.push(entry); continue; }
+
+      const result = await verifyPayment(match[1]);
+      if (result.payment_status === 'paid') {
+        db.prepare(
+          `UPDATE bookings SET payment_status = 'paid', status = 'confirmed', updated_at = ? WHERE id = ?`
+        ).run(new Date().toISOString(), row.id);
+        if (result.booking?.customer_email) {
+          sendBookingConfirmation({
+            customerEmail: result.booking.customer_email,
+            customerName: result.booking.customer_name,
+            bookingId: result.booking.booking_reference,
+            checkIn: result.booking.entry_date,
+            checkOut: result.booking.exit_date,
+            parkingType: result.booking.parking_type,
+            amount: result.booking.total_amount,
+          }).catch(console.error);
+        }
+        entry.outcome = 'confirmed';
+      } else {
+        entry.outcome = 'not_paid_' + result.payment_status;
+      }
+    } catch (err) {
+      entry.outcome = 'error: ' + err.message;
+    }
+    results.push(entry);
+  }
+
+  res.json({ total: rows.length, results });
+});
+
 // Returns Base44's Stripe publishable key for frontend use
 router.get('/stripe-key', async (req, res) => {
   try {
