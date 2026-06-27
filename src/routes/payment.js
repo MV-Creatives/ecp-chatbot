@@ -10,7 +10,7 @@ router.post('/verify', async (req, res) => {
   let { sessionId: stripeSessionId, bookingId, bookingReference } = req.body;
 
   if (!stripeSessionId && bookingReference) {
-    const row = db.prepare(
+    const row = await db.prepare(
       `SELECT id, payment_url FROM bookings WHERE crm_booking_id = ? LIMIT 1`
     ).get(bookingReference);
 
@@ -40,7 +40,7 @@ router.post('/verify', async (req, res) => {
 
     // Update local record if we have a bookingId
     if (bookingId) {
-      db.prepare(`
+      await db.prepare(`
         UPDATE bookings SET payment_status = 'paid', status = 'confirmed', updated_at = ?
         WHERE id = ?
       `).run(new Date().toISOString(), bookingId);
@@ -75,7 +75,7 @@ router.post('/verify', async (req, res) => {
 // Checks local DB first; only calls Base44 if still unpaid.
 router.get('/status/:bookingReference', async (req, res) => {
   const { bookingReference } = req.params;
-  const row = db.prepare(
+  const row = await db.prepare(
     'SELECT id, payment_status, payment_url FROM bookings WHERE crm_booking_id = ? LIMIT 1'
   ).get(bookingReference);
 
@@ -88,7 +88,7 @@ router.get('/status/:bookingReference', async (req, res) => {
       if (match) {
         const result = await verifyPayment(match[1]);
         if (result.payment_status === 'paid') {
-          db.prepare(
+          await db.prepare(
             'UPDATE bookings SET payment_status = "paid", status = "confirmed", updated_at = ? WHERE id = ?'
           ).run(new Date().toISOString(), row.id);
           if (result.booking?.customer_email) {
@@ -114,7 +114,7 @@ router.get('/status/:bookingReference', async (req, res) => {
 // One-time admin sync — finds all unpaid bookings with a payment_url and tries to verify each.
 // Protected by the widget API key. Hit once, then it's safe to leave (idempotent).
 router.get('/sync-unpaid', async (req, res) => {
-  const rows = db.prepare(
+  const rows = await db.prepare(
     `SELECT id, crm_booking_id, payment_url, payment_status
      FROM bookings
      WHERE payment_status != 'paid' AND payment_url IS NOT NULL`

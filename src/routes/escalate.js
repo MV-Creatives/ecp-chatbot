@@ -12,7 +12,7 @@ router.post('/', async (req, res) => {
   const id = uuidv4();
   const now = new Date().toISOString();
 
-  db.prepare(`
+  await db.prepare(`
     INSERT INTO escalations (id, session_id, user_message, reason, status, created_at)
     VALUES (?, ?, ?, ?, 'open', ?)
   `).run(id, sessionId, userMessage || '', reason || 'Customer requested agent', now);

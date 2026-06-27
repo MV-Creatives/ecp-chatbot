@@ -9,8 +9,8 @@ const { sendEscalationAlert, sendBookingConfirmation, sendStaffBookingAlert } = 
 const sessionHistory = new Map();
 const sessionBookings = new Map(); // prevent duplicate bookings per session
 
-function loadHistoryFromDb(sid) {
-  const rows = db.prepare(`
+async function loadHistoryFromDb(sid) {
+  const rows = await db.prepare(`
     SELECT user_message, bot_response FROM chat_history
     WHERE session_id = ? ORDER BY timestamp ASC LIMIT 40
   `).all(sid);
@@ -33,13 +33,13 @@ router.post('/', async (req, res) => {
   const sid = sessionId || uuidv4();
 
   if (!sessionHistory.has(sid)) {
-    const saved = loadHistoryFromDb(sid);
+    const saved = await loadHistoryFromDb(sid);
     // Only restore recent history (last 24 hours) to avoid stale booking data
     const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const recent = db.prepare(
+    const recent = await db.prepare(
       `SELECT COUNT(*) as cnt FROM chat_history WHERE session_id = ? AND timestamp > ?`
     ).get(sid, cutoff);
-    if (saved.length && recent.cnt > 0) sessionHistory.set(sid, saved);
+    if (saved.length && recent?.cnt > 0) sessionHistory.set(sid, saved);
   }
 
   const history = sessionHistory.get(sid) || [];
@@ -101,7 +101,7 @@ router.post('/', async (req, res) => {
       // Save to local DB separately so a DB error never marks the booking as failed
       if (toolResult.success) {
         try {
-          db.prepare(`
+          await db.prepare(`
             INSERT INTO bookings (id, session_id, crm_booking_id, parking_type, check_in, check_out,
               customer_name, customer_email, customer_phone, amount, status, payment_status, payment_url, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?, ?)
@@ -155,7 +155,7 @@ router.post('/', async (req, res) => {
     }
 
     // Store in DB
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO chat_history (id, session_id, user_id, user_message, bot_response, timestamp, conversation_type, metadata)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
@@ -179,8 +179,8 @@ router.post('/', async (req, res) => {
   }
 });
 
-router.get('/history/:sessionId', (req, res) => {
-  const rows = db.prepare(`
+router.get('/history/:sessionId', async (req, res) => {
+  const rows = await db.prepare(`
     SELECT user_message, bot_response, timestamp, conversation_type
     FROM chat_history WHERE session_id = ? ORDER BY timestamp ASC
   `).all(req.params.sessionId);

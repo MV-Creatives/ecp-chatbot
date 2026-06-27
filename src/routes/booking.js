@@ -51,7 +51,7 @@ router.post('/create', async (req, res) => {
     const bookingId = uuidv4();
     const now = new Date().toISOString();
 
-    db.prepare(`
+    await db.prepare(`
       INSERT INTO bookings (id, session_id, crm_booking_id, parking_type, check_in, check_out,
         customer_name, customer_email, customer_phone, amount, status, payment_status, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'unpaid', ?, ?)
@@ -75,8 +75,8 @@ router.post('/create', async (req, res) => {
   }
 });
 
-router.get('/:bookingId', (req, res) => {
-  const booking = db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.bookingId);
+router.get('/:bookingId', async (req, res) => {
+  const booking = await db.prepare('SELECT * FROM bookings WHERE id = ?').get(req.params.bookingId);
   if (!booking) return res.status(404).json({ error: 'Booking not found' });
   res.json(booking);
 });
