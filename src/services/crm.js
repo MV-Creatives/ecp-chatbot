@@ -38,8 +38,40 @@ async function checkAvailability({ checkIn, checkOut, parkingType }) {
   }
 }
 
-function normaliseCode(code) {
-  return code ? code.toUpperCase().trim() : null;
+// Discount codes fetched live from Base44, cached for 5 minutes
+let _discountCache = null;
+let _discountCacheAt = 0;
+
+async function fetchDiscountCodes() {
+  if (_discountCache && Date.now() - _discountCacheAt < 5 * 60 * 1000) {
+    return _discountCache;
+  }
+  try {
+    const response = await crmClient.get('/getDiscountCodes');
+    const items = Array.isArray(response.data) ? response.data : [];
+    const map = {};
+    items.forEach(function(c) {
+      if (c.is_active && c.code) {
+        map[c.code.toUpperCase()] = parseFloat(c.discount_percent || 0);
+      }
+    });
+    _discountCache = map;
+    _discountCacheAt = Date.now();
+    console.log('Discount codes loaded:', Object.keys(map));
+    return map;
+  } catch (err) {
+    console.warn('Could not fetch discount codes, using cache or fallback:', err.message);
+    return _discountCache || { 'MVCREATIVES': 100 };
+  }
+}
+
+async function applyDiscount(code) {
+  if (!code) return null;
+  const upper = code.toUpperCase().trim();
+  const codes = await fetchDiscountCodes();
+  const pct = codes[upper];
+  if (pct !== undefined) return { valid: true, code: upper, percent: pct };
+  return { valid: false, code: upper };
 }
 
 async function createBooking({
@@ -48,7 +80,11 @@ async function createBooking({
   customerName, customerEmail, customerPhone,
   discountCode,
 }) {
-  const code = normaliseCode(discountCode);
+  const discount = await applyDiscount(discountCode);
+
+  if (discount && !discount.valid) {
+    throw new Error(`INVALID_DISCOUNT_CODE:${discount.code}`);
+  }
 
   const payload = {
     customer_name: customerName,
@@ -62,7 +98,7 @@ async function createBooking({
     purpose: purpose || 'cruise',
     vehicle_registration: vehicleRegistration || '',
     vehicle_make: vehicleMake || '',
-    ...(code && { discount_code: code }),
+    ...(discount && { discount_code: discount.code, discount_percent: discount.percent }),
   };
 
   console.log('Creating booking with payload:', JSON.stringify(payload));
@@ -70,14 +106,8 @@ async function createBooking({
   try {
     const response = await crmClient.get('/createBookingFromChat', { params: payload });
     console.log('Booking created:', JSON.stringify(response.data));
-    const data = response.data;
-    // If a code was sent but Base44 applied 0% discount, the code wasn't recognised
-    if (code && (data.discount_percent === 0 || data.discount_percent === null || data.discount_percent === undefined)) {
-      throw new Error(`INVALID_DISCOUNT_CODE:${code}`);
-    }
-    return data;
+    return response.data;
   } catch (err) {
-    if (err.message.startsWith('INVALID_DISCOUNT_CODE:')) throw err;
     const detail = err.response?.data || err.message;
     console.error('Base44 booking error:', JSON.stringify(detail));
     throw new Error(typeof detail === 'object' ? JSON.stringify(detail) : detail);
