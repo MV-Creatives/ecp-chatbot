@@ -71,6 +71,46 @@ router.post('/verify', async (req, res) => {
   }
 });
 
+// Lightweight poll endpoint — widget checks this every 20s after a booking is created.
+// Checks local DB first; only calls Base44 if still unpaid.
+router.get('/status/:bookingReference', async (req, res) => {
+  const { bookingReference } = req.params;
+  const row = db.prepare(
+    'SELECT id, payment_status, payment_url FROM bookings WHERE crm_booking_id = ? LIMIT 1'
+  ).get(bookingReference);
+
+  if (!row) return res.json({ paid: false });
+  if (row.payment_status === 'paid') return res.json({ paid: true });
+
+  if (row.payment_url) {
+    try {
+      const match = row.payment_url.match(/\/(cs_(?:live|test)_[^#?/]+)/);
+      if (match) {
+        const result = await verifyPayment(match[1]);
+        if (result.payment_status === 'paid') {
+          db.prepare(
+            'UPDATE bookings SET payment_status = "paid", status = "confirmed", updated_at = ? WHERE id = ?'
+          ).run(new Date().toISOString(), row.id);
+          if (result.booking?.customer_email) {
+            sendBookingConfirmation({
+              customerEmail: result.booking.customer_email,
+              customerName: result.booking.customer_name,
+              bookingId: result.booking.booking_reference,
+              checkIn: result.booking.entry_date,
+              checkOut: result.booking.exit_date,
+              parkingType: result.booking.parking_type,
+              amount: result.booking.total_amount,
+            }).catch(console.error);
+          }
+          return res.json({ paid: true });
+        }
+      }
+    } catch(e) { /* payment likely not completed yet */ }
+  }
+
+  res.json({ paid: false });
+});
+
 // Returns Base44's Stripe publishable key for frontend use
 router.get('/stripe-key', async (req, res) => {
   try {

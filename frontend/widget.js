@@ -316,37 +316,6 @@
     wrap.appendChild(bubble);
     msgs.appendChild(wrap);
     msgs.scrollTop = msgs.scrollHeight;
-
-    // After user clicks Pay Now and returns from the Stripe tab, show the confirm button
-    if (!isFree) {
-      var payLink = document.getElementById('ecp-pay-link');
-      if (payLink) {
-        payLink.addEventListener('click', function() {
-          var shown = false;
-          function showConfirmBtn() {
-            if (shown) return;
-            shown = true;
-            window.removeEventListener('focus', showConfirmBtn);
-            document.removeEventListener('visibilitychange', onVisChange);
-            var paidBtn = document.createElement('button');
-            paidBtn.id = 'ecp-paid-btn';
-            paidBtn.setAttribute('data-ref', booking.booking_reference || '');
-            paidBtn.style.cssText = 'width:100%;margin-top:10px;background:white;color:#27ae60;border:1.5px solid #27ae60;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:block;';
-            paidBtn.textContent = '✅ I\'ve completed my payment';
-            payLink.parentNode.appendChild(paidBtn);
-            msgs.scrollTop = msgs.scrollHeight;
-          }
-          function onVisChange() {
-            if (document.visibilityState === 'visible') showConfirmBtn();
-          }
-          // Small delay avoids triggering immediately in some browsers
-          setTimeout(function() {
-            window.addEventListener('focus', showConfirmBtn);
-            document.addEventListener('visibilitychange', onVisChange);
-          }, 500);
-        });
-      }
-    }
   }
 
   async function sendMessage(text) {
@@ -384,9 +353,10 @@
       if (!localStorage.getItem(msgKey())) saveMsgLog();
       renderMessage('bot', data.response);
 
-      // If a booking was just created, show a clickable Pay Now button
+      // If a booking was just created, show payment card and start polling for confirmation
       if (data.booking && data.booking.payment_url) {
         renderPaymentButton(data.booking);
+        startPaymentPoll(data.booking.booking_reference);
       }
 
       // Auto-suggest quick replies based on conversation type
@@ -489,34 +459,22 @@
     }
   }
 
-  async function confirmPayment(bookingReference, btn) {
-    btn.disabled = true;
-    btn.textContent = 'Confirming…';
-
-    try {
-      var res = await fetch(ECP_CONFIG.apiBase + '/api/payment/verify', {
-        method: 'POST',
-        headers: apiHeaders(),
-        body: JSON.stringify({ bookingReference: bookingReference }),
-      });
-      var data = await res.json();
-
-      if (res.ok && data.success) {
-        btn.style.background = '#27ae60';
-        btn.style.color = 'white';
-        btn.style.border = 'none';
-        btn.textContent = '✅ Payment confirmed!';
-        renderMessage('bot', 'Your payment is confirmed and your booking is locked in. A confirmation email is on its way. See you soon!');
-      } else {
-        btn.disabled = false;
-        btn.textContent = '✅ I\'ve completed my payment';
-        renderMessage('bot', 'We couldn\'t verify your payment yet — it may still be processing. Please wait a minute and try again, or call us on 0404 094 064.');
-      }
-    } catch (err) {
-      btn.disabled = false;
-      btn.textContent = '✅ I\'ve completed my payment';
-      renderMessage('bot', 'Something went wrong. Please call us on 0404 094 064 and we\'ll confirm your booking manually.');
-    }
+  function startPaymentPoll(bookingRef) {
+    var attempts = 0;
+    var interval = setInterval(async function() {
+      attempts++;
+      if (attempts > 12) { clearInterval(interval); return; } // give up after ~4 min
+      try {
+        var res = await fetch(ECP_CONFIG.apiBase + '/api/payment/status/' + encodeURIComponent(bookingRef), {
+          headers: apiHeaders(),
+        });
+        var data = await res.json();
+        if (data.paid) {
+          clearInterval(interval);
+          renderMessage('bot', 'Your payment is confirmed and your booking is locked in. A confirmation email is on its way — see you soon!');
+        }
+      } catch(e) { /* ignore — Render free tier may be cold starting */ }
+    }, 20000);
   }
 
   async function escalateToAgent() {
@@ -630,13 +588,6 @@
 
     initInput();
     if (window.innerWidth > 480) initDrag(els.container);
-
-    // Handle "I've completed my payment" button via delegation
-    document.getElementById('ecp-messages').addEventListener('click', function(e) {
-      var btn = e.target.closest('#ecp-paid-btn');
-      if (!btn) return;
-      confirmPayment(btn.getAttribute('data-ref'), btn);
-    });
 
     // bfcache: reset spinner if user navigates away and returns
     window.addEventListener('pageshow', function(event) {
