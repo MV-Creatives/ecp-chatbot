@@ -274,17 +274,12 @@
         '<p style="margin:4px 0 0;color:#555;font-size:12px;">Your booking is confirmed. A confirmation email is on its way!</p>',
       '</div>',
     ].join('') : [
-      '<a href="' + booking.payment_url + '" target="_blank" ',
+      '<a id="ecp-pay-link" href="' + booking.payment_url + '" target="_blank" ',
         'style="display:block;text-align:center;background:#ff751f;color:white;padding:11px 16px;',
         'border-radius:8px;text-decoration:none;font-weight:700;font-size:14px;">',
         '💳 Pay Now & Confirm Booking',
       '</a>',
       '<p style="margin:8px 0 0;font-size:11px;color:#999;text-align:center;">Secure payment via Stripe</p>',
-      '<button id="ecp-paid-btn" data-ref="' + (booking.booking_reference || '') + '" ',
-        'style="width:100%;margin-top:10px;background:white;color:#27ae60;border:1.5px solid #27ae60;',
-        'padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;">',
-        '✅ I\'ve completed my payment',
-      '</button>',
     ].join('');
     bubble.innerHTML = [
       '<p style="margin:0 0 10px;font-size:12px;color:#888;">',
@@ -302,6 +297,37 @@
     wrap.appendChild(bubble);
     msgs.appendChild(wrap);
     msgs.scrollTop = msgs.scrollHeight;
+
+    // After user clicks Pay Now and returns from the Stripe tab, show the confirm button
+    if (!isFree) {
+      var payLink = document.getElementById('ecp-pay-link');
+      if (payLink) {
+        payLink.addEventListener('click', function() {
+          var shown = false;
+          function showConfirmBtn() {
+            if (shown) return;
+            shown = true;
+            window.removeEventListener('focus', showConfirmBtn);
+            document.removeEventListener('visibilitychange', onVisChange);
+            var paidBtn = document.createElement('button');
+            paidBtn.id = 'ecp-paid-btn';
+            paidBtn.setAttribute('data-ref', booking.booking_reference || '');
+            paidBtn.style.cssText = 'width:100%;margin-top:10px;background:white;color:#27ae60;border:1.5px solid #27ae60;padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;display:block;';
+            paidBtn.textContent = '✅ I\'ve completed my payment';
+            payLink.parentNode.appendChild(paidBtn);
+            msgs.scrollTop = msgs.scrollHeight;
+          }
+          function onVisChange() {
+            if (document.visibilityState === 'visible') showConfirmBtn();
+          }
+          // Small delay avoids triggering immediately in some browsers
+          setTimeout(function() {
+            window.addEventListener('focus', showConfirmBtn);
+            document.addEventListener('visibilitychange', onVisChange);
+          }, 500);
+        });
+      }
+    }
   }
 
   async function sendMessage(text) {
