@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyPayment, getStripePublishableKey } = require('../services/crm');
+const { verifyPayment, getStripePublishableKey, debugDiscountEndpoints } = require('../services/crm');
 const { sendBookingConfirmation } = require('../services/email');
 const { db } = require('../services/database');
 
@@ -155,6 +155,12 @@ router.get('/sync-unpaid', async (req, res) => {
   }
 
   res.json({ total: rows.length, results });
+});
+
+// Temp debug — find which discount endpoint Base44 exposes
+router.get('/debug-discount', async (req, res) => {
+  const results = await debugDiscountEndpoints(req.query.code);
+  res.json(results);
 });
 
 // Returns Base44's Stripe publishable key for frontend use

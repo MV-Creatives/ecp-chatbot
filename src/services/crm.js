@@ -145,4 +145,18 @@ function getMockCruiseSchedule() {
   return { cruises };
 }
 
-module.exports = { checkAvailability, createBooking, getCruiseSchedule, verifyPayment, getStripePublishableKey };
+async function debugDiscountEndpoints(code) {
+  const results = {};
+  const endpoints = ['/getDiscountCodes', '/listDiscountCodes', '/getPromos', '/validateDiscountCode'];
+  for (const ep of endpoints) {
+    try {
+      const r = await crmClient.get(ep, code ? { params: { code } } : {});
+      results[ep] = r.data;
+    } catch(e) {
+      results[ep] = 'error: ' + (e.response?.status || '') + ' ' + (e.response?.data?.message || e.message);
+    }
+  }
+  return results;
+}
+
+module.exports = { checkAvailability, createBooking, getCruiseSchedule, verifyPayment, getStripePublishableKey, debugDiscountEndpoints };
