@@ -38,18 +38,40 @@ async function checkAvailability({ checkIn, checkOut, parkingType }) {
   }
 }
 
-// Discount codes: code → percentage off (e.g. 10 = 10% off)
-const DISCOUNT_CODES = {
-  'ECP10': 10,
-  'ECP15': 15,
-  'ECP20': 20,
-  'MVCREATIVES': 100,
-};
+// Discount codes fetched live from Base44, cached for 5 minutes
+let _discountCache = null;
+let _discountCacheAt = 0;
 
-function applyDiscount(code) {
+async function fetchDiscountCodes() {
+  if (_discountCache && Date.now() - _discountCacheAt < 5 * 60 * 1000) {
+    return _discountCache;
+  }
+  try {
+    const response = await crmClient.get('/getDiscountCodes');
+    const items = Array.isArray(response.data) ? response.data : (response.data.codes || []);
+    const map = {};
+    items.forEach(function(c) {
+      const status = (c.status || '').toLowerCase();
+      const isActive = status === 'active' || status === 'enabled' || c.is_active === true;
+      if (isActive && c.code) {
+        map[c.code.toUpperCase()] = parseFloat(c.discount_percent || c.discount || 0);
+      }
+    });
+    _discountCache = map;
+    _discountCacheAt = Date.now();
+    console.log('Discount codes loaded from Base44:', Object.keys(map));
+    return map;
+  } catch (err) {
+    console.warn('Could not fetch discount codes from Base44, using fallback:', err.message);
+    return _discountCache || { 'MVCREATIVES': 100 };
+  }
+}
+
+async function applyDiscount(code) {
   if (!code) return null;
   const upper = code.toUpperCase().trim();
-  const pct = DISCOUNT_CODES[upper];
+  const codes = await fetchDiscountCodes();
+  const pct = codes[upper];
   if (pct !== undefined) return { valid: true, code: upper, percent: pct };
   return { valid: false, code: upper };
 }
@@ -60,7 +82,7 @@ async function createBooking({
   customerName, customerEmail, customerPhone,
   discountCode,
 }) {
-  const discount = applyDiscount(discountCode);
+  const discount = await applyDiscount(discountCode);
 
   if (discount && !discount.valid) {
     throw new Error(`INVALID_DISCOUNT_CODE:${discount.code}`);
@@ -78,7 +100,7 @@ async function createBooking({
     purpose: purpose || 'cruise',
     vehicle_registration: vehicleRegistration || '',
     vehicle_make: vehicleMake || '',
-    ...(discount && { discount_percent: discount.percent }),
+    ...(discount && { discount_code: discount.code, discount_percent: discount.percent }),
   };
 
   console.log('Creating booking with payload:', JSON.stringify(payload));
