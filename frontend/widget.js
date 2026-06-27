@@ -30,6 +30,19 @@
     widgetY: null,
   };
 
+  // ─── Message persistence ───────────────────────────────────────────────────
+  function msgKey() { return 'ecp_msgs_' + state.sessionId; }
+
+  function saveMsgLog() {
+    if (!state.sessionId) return;
+    try { localStorage.setItem(msgKey(), JSON.stringify(state.messages.slice(-40))); } catch(e) {}
+  }
+
+  function loadMsgLog() {
+    if (!state.sessionId) return [];
+    try { return JSON.parse(localStorage.getItem(msgKey()) || '[]'); } catch(e) { return []; }
+  }
+
   // ─── Styles ────────────────────────────────────────────────────────────────
   function injectStyles() {
     var css = [
@@ -172,7 +185,7 @@
   }
 
   // ─── Messages ──────────────────────────────────────────────────────────────
-  function renderMessage(role, text) {
+  function renderMessage(role, text, skipLog) {
     var msgs = document.getElementById('ecp-messages');
     var wrap = document.createElement('div');
     wrap.className = 'ecp-msg ecp-' + role;
@@ -189,6 +202,12 @@
     wrap.appendChild(bubble);
     msgs.appendChild(wrap);
     msgs.scrollTop = msgs.scrollHeight;
+
+    if (!skipLog) {
+      state.messages.push({ role: role, text: text });
+      saveMsgLog();
+    }
+
     return wrap;
   }
 
@@ -236,7 +255,7 @@
   var WELCOME_REPLIES = ['Check parking prices', 'Book parking', 'Shuttle info', 'Location & directions'];
 
   function showWelcome() {
-    renderMessage('bot', 'G\'day! 👋 Welcome to East Coast Parking. I\'m Matty, East Coast Parking\'s Virtual AI Assistant. What can I help you with today?');
+    renderMessage('bot', 'G\'day! 👋 Welcome to East Coast Parking. I\'m Echo, East Coast Parking\'s Virtual AI Assistant. What can I help you with today?');
     setQuickReplies(WELCOME_REPLIES);
   }
 
@@ -361,6 +380,8 @@
 
       state.sessionId = data.sessionId;
       sessionStorage.setItem('ecp_session_id', data.sessionId);
+      // Update storage key now that sessionId is confirmed
+      if (!localStorage.getItem(msgKey())) saveMsgLog();
       renderMessage('bot', data.response);
 
       // If a booking was just created, show a clickable Pay Now button
@@ -552,7 +573,12 @@
 
     var msgs = document.getElementById('ecp-messages');
     if (msgs && msgs.children.length === 0) {
-      showWelcome();
+      var saved = loadMsgLog();
+      if (saved.length) {
+        saved.forEach(function(m) { renderMessage(m.role, m.text, true); });
+      } else {
+        showWelcome();
+      }
     }
 
     var badge = document.getElementById('ecp-widget-badge');
