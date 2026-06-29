@@ -77,6 +77,7 @@ async function createBooking({
   checkIn, checkInTime, checkOut, checkOutTime, parkingType, purpose,
   vehicleRegistration, vehicleMake,
   customerName, customerEmail, customerPhone,
+  outboundFlight, outboundTerminal, returnFlight, returnArrivalTime, returnTerminal,
   discountCode,
 }) {
   const discount = await applyDiscount(discountCode);
@@ -97,6 +98,11 @@ async function createBooking({
     purpose: purpose || 'cruise',
     vehicle_registration: vehicleRegistration || '',
     vehicle_make: vehicleMake || '',
+    ...(outboundFlight    && { outbound_flight: outboundFlight }),
+    ...(outboundTerminal  && { outbound_terminal: outboundTerminal }),
+    ...(returnFlight      && { return_flight: returnFlight }),
+    ...(returnArrivalTime && { return_arrival_time: returnArrivalTime }),
+    ...(returnTerminal    && { return_terminal: returnTerminal }),
     ...(discount && { discount_code: discount.code, discount_percent: discount.percent }),
   };
 
