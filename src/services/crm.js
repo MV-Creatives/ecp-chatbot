@@ -100,11 +100,12 @@ async function createBooking({
     vehicle_make: vehicleMake || '',
     ...(outboundFlight    && { flight_number: outboundFlight }),
     ...(outboundTerminal  && { terminal: outboundTerminal }),
-    ...(checkInTime       && { shuttle_time: checkInTime }),
-    ...(returnFlight      && { return_flight: returnFlight }),
-    ...(returnArrivalTime && returnTerminal && { return_arrival: `${returnArrivalTime} (${returnTerminal})` }),
-    ...(returnArrivalTime && { return_arrival_time: returnArrivalTime }),
-    ...(returnTerminal    && { return_terminal: returnTerminal }),
+    ...(outboundTerminal  && { terminal_type: outboundTerminal.toLowerCase().startsWith('international') ? 'international' : 'domestic' }),
+    ...(checkInTime       && { shuttle_time: formatShuttleTime(checkInTime) }),
+    ...(outboundFlight    && { shuttle_type: 'standard', shuttle_passengers: 1, shuttle_direction: 'two_way' }),
+    ...(returnFlight      && { return_flight_number: returnFlight }),
+    ...(returnArrivalTime && { return_flight_arrival_time: returnArrivalTime }),
+    ...(returnTerminal    && { return_terminal_type: returnTerminal.toLowerCase().startsWith('international') ? 'international' : 'domestic' }),
     ...(discount && { discount_code: discount.code, discount_percent: discount.percent }),
   };
 
@@ -147,6 +148,13 @@ async function getStripePublishableKey() {
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function formatShuttleTime(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hour = h % 12 || 12;
+  return `${String(hour).padStart(2, '0')}:${String(m).padStart(2, '0')} ${period}`;
+}
 
 function daysBetween(from, to) {
   return Math.max(1, Math.ceil(
