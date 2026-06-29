@@ -9,24 +9,23 @@ const crmClient = axios.create({
   timeout: 10000,
 });
 
-async function checkAvailability({ checkIn, checkOut, parkingType }) {
+async function checkAvailability({ checkIn, checkOut, parkingType, purpose }) {
   try {
     const response = await crmClient.post('/checkBlockedDates', {
-      parking_type: parkingType,   // "open_air" | "undercover"
+      parking_type: parkingType,
       entry_date: checkIn,
       exit_date: checkOut,
     });
 
     const { available, blocked_dates } = response.data;
     const days = daysBetween(checkIn, checkOut);
-    const dailyRate = parkingType === 'undercover' ? null : 9.90;
-    const total = parkingType === 'undercover' ? 135 : dailyRate * days;
+    const isAirport = purpose === 'airport';
+    const total = calcPrice(parkingType, days, isAirport);
 
     return {
       available,
       blocked_dates: blocked_dates || [],
       days,
-      daily_rate: dailyRate,
       total_price: total,
       note: blocked_dates?.length
         ? `Note: some dates have limited availability (${blocked_dates.join(', ')})`
@@ -34,7 +33,7 @@ async function checkAvailability({ checkIn, checkOut, parkingType }) {
     };
   } catch (err) {
     console.warn('CRM availability check failed, using mock:', err.message);
-    return getMockAvailability({ checkIn, checkOut, parkingType });
+    return getMockAvailability({ checkIn, checkOut, parkingType, purpose });
   }
 }
 
@@ -147,14 +146,24 @@ function daysBetween(from, to) {
   ));
 }
 
-function getMockAvailability({ checkIn, checkOut, parkingType }) {
+function calcPrice(parkingType, days, isAirport) {
+  if (isAirport) {
+    if (parkingType === 'open_air') return days <= 3 ? 65 : 65 + (days - 3) * 9.90;
+    return days <= 3 ? 75 : 75 + (days - 3) * 14.90;
+  }
+  if (parkingType !== 'undercover') return 9.90 * days;
+  const table = { 1: 135, 2: 135, 3: 148.50, 4: 168, 5: 179, 6: 195, 7: 205, 8: 215, 9: 225, 10: 235, 11: 245, 12: 255, 13: 265, 14: 275 };
+  return days <= 14 ? table[days] : 275 + (days - 14) * 16;
+}
+
+function getMockAvailability({ checkIn, checkOut, parkingType, purpose }) {
   const days = daysBetween(checkIn, checkOut);
-  const total = parkingType === 'undercover' ? 135 : 9.90 * days;
+  const isAirport = purpose === 'airport';
+  const total = calcPrice(parkingType, days, isAirport);
   return {
     available: true,
     blocked_dates: [],
     days,
-    daily_rate: parkingType === 'undercover' ? null : 9.90,
     total_price: total,
     note: null,
   };
